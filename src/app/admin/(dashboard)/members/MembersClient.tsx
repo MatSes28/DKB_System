@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { addMember, deleteMember, extendMembership } from './actions';
-import { User, Phone, MapPin, Tag, Edit, CalendarPlus, Trash2, Search } from 'lucide-react';
+import { addMember, deleteMember, extendMembership, updateMember } from './actions';
+import { User, Users, Phone, MapPin, Tag, Edit, CalendarPlus, Trash2, Search } from 'lucide-react';
 
 export default function MembersClient({ initialMembers }: { initialMembers: any[] }) {
   const [members, setMembers] = useState(initialMembers);

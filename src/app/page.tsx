@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ScanLine, CheckCircle2, XCircle, Loader2, Fingerprint } from 'lucide-react';
+import { ScanLine, CheckCircle2, XCircle, Loader2, Fingerprint, Smartphone } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function KioskPage() {
   const [rfidBuffer, setRfidBuffer] = useState('');
   const [status, setStatus] = useState<'IDLE' | 'LOADING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [message, setMessage] = useState('');
-  const [memberData, setMemberData] = useState<{name: string, membershipEnd: string, isActive: boolean} | null>(null);
+  const [memberData, setMemberData] = useState<{id: string, name: string, membershipEnd: string, isActive: boolean} | null>(null);
 
   // Hidden input ref to capture focus if needed, but we rely on global keydown
   const inputRef = useRef<HTMLInputElement>(null);

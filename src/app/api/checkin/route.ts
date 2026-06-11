@@ -49,13 +49,13 @@ export async function POST(req: Request) {
       });
     }
     // Check if membership is active
-    const now = new Date();
     const isMembershipActive = now >= member.membershipStart && now <= member.membershipEnd;
 
     return NextResponse.json({
       success: true,
       action: action,
       member: {
+        id: member.id,
         name: member.name,
         membershipEnd: member.membershipEnd,
         status: member.status,

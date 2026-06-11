@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Member {
+  id               String       @id @default(uuid())
+  rfidTag          String       @unique
+  name             String
+  contact          String?
+  address          String?
+  age              Int?
+  membershipStart  DateTime
+  membershipEnd    DateTime
+  status           String       @default("ACTIVE") // ACTIVE, INACTIVE
+  attendances      Attendance[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id])
+  timestamp DateTime @default(now())
+  tapOut    DateTime?
+}
+
+model Sale {
+  id        String   @id @default(uuid())
+  itemName  String
+  amount    Float
+  type      String   @default("INVENTORY") // "GYM" or "INVENTORY"
+  date      DateTime @default(now())
+}
+
+model InventoryItem {
+  id        String   @id @default(uuid())
+  name      String
+  quantity  Int      @default(0)
+  price     Float
+  updatedAt DateTime @updatedAt
+}
+
+model Equipment {
+  id             String    @id @default(uuid())
+  name           String
+  status         String    @default("OPTIMAL") // OPTIMAL, MAINTENANCE, OUT_OF_ORDER
+  lastMaintained DateTime  @default(now())
+  nextMaintenance DateTime?
+  notes          String?
+  updatedAt      DateTime  @updatedAt
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String   // Hashed password
+  role      String   @default("STAFF") // ADMIN, STAFF
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

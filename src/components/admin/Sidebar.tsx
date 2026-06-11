@@ -23,8 +23,10 @@ export default function Sidebar({ role = 'ADMIN' }: { role?: string }) {
   const menuItems = allMenuItems.filter(item => item.roles.includes(role));
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/admin/login');
+    if (window.confirm('Are you sure you want to log out?')) {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/admin/login');
+    }
   };
 
   return (

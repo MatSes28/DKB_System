@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, ShoppingCart, ClipboardList, Box, LogOut, ChevronLeft, ChevronRight, Wrench } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, ClipboardList, Box, LogOut, Wrench, Menu, X } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const allMenuItems = [
@@ -16,10 +17,15 @@ const allMenuItems = [
 ];
 
 export default function Sidebar({ role = 'ADMIN' }: { role?: string }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Close sidebar on mobile when navigating
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
 
   const menuItems = allMenuItems.filter(item => item.roles.includes(role));
 
@@ -30,24 +36,41 @@ export default function Sidebar({ role = 'ADMIN' }: { role?: string }) {
 
   return (
     <>
-      <div className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
-        <button 
-          className={styles.toggleBtn} 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-        >
-          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+      <button className={styles.mobileOpenBtn} onClick={() => setIsMobileOpen(true)}>
+        <Menu size={24} />
+      </button>
 
-        <div className={styles.logo} style={{ padding: isCollapsed ? '0' : '0 1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="text-brand" style={{ fontSize: isCollapsed ? '1.2rem' : '1.8rem', lineHeight: '1', transition: 'all 0.3s' }}>DKB</span>
-            {!isCollapsed && (
-              <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.85rem', lineHeight: '1.1', textAlign: 'left', letterSpacing: '1.5px', color: '#fff' }}>
-                <span>FITNESS</span>
-                <span>GYM</span>
-              </div>
-            )}
+      {isMobileOpen && <div className={styles.mobileOverlay} onClick={() => setIsMobileOpen(false)} />}
+
+      <div className={`${styles.sidebar} ${isMobileOpen ? styles.mobileOpen : ''}`}>
+        <button className={styles.mobileCloseBtn} onClick={() => setIsMobileOpen(false)}>
+          <X size={24} />
+        </button>
+        <div className={styles.logo} style={{ padding: '1.5rem 0', height: 'auto', minHeight: '110px', transition: 'all 0.3s' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '10px' }}>
+            <div style={{ 
+              position: 'relative', 
+              width: '56px', 
+              height: '56px', 
+              borderRadius: '16px', 
+              overflow: 'hidden', 
+              flexShrink: 0, 
+              backgroundColor: '#000',
+              border: '1px solid rgba(245, 166, 35, 0.3)',
+              boxShadow: '0 4px 20px rgba(245, 166, 35, 0.15)',
+              transition: 'all 0.3s'
+            }}>
+              <Image 
+                src="/logo.png" 
+                alt="DKB Logo" 
+                fill 
+                style={{ objectFit: 'contain', transform: 'scale(0.85)' }}
+                priority
+              />
+            </div>
+            <span style={{ fontSize: '0.75rem', color: '#666', letterSpacing: '2px', fontWeight: 600, textTransform: 'uppercase', textAlign: 'center' }}>
+              DKB Fitness Gym
+            </span>
           </div>
         </div>
         
@@ -61,7 +84,6 @@ export default function Sidebar({ role = 'ADMIN' }: { role?: string }) {
                 key={item.path} 
                 href={item.path}
                 className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-                title={isCollapsed ? item.name : undefined}
               >
                 <Icon size={20} className={styles.icon} />
                 <span className={styles.navText}>{item.name}</span>
@@ -71,7 +93,7 @@ export default function Sidebar({ role = 'ADMIN' }: { role?: string }) {
         </nav>
 
         <div className={styles.footer}>
-          <button onClick={() => setShowLogoutConfirm(true)} className={styles.logoutBtn} title={isCollapsed ? "Logout" : undefined}>
+          <button onClick={() => setShowLogoutConfirm(true)} className={styles.logoutBtn}>
             <LogOut size={20} className={styles.icon} />
             <span className={styles.navText}>Logout</span>
           </button>

@@ -119,7 +119,7 @@ export default function DashboardClient({
       </div>
 
       {/* Main Content Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
+      <div className={styles.mainChartsGrid}>
         
         {/* Charts Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -148,7 +148,7 @@ export default function DashboardClient({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <div className={styles.subChartsGrid}>
             <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.5s' }}>
               <h3 className={styles.statLabel} style={{ marginBottom: '1.5rem' }}>Peak Usage Heatmap</h3>
               <div style={{ width: '100%', height: '200px' }}>

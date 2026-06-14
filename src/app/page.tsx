@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { ScanLine, CheckCircle2, XCircle, Loader2, Fingerprint, Smartphone } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -184,10 +185,30 @@ export default function KioskPage() {
       />
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '600px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '3rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.1', textShadow: '0 0 20px rgba(245, 166, 35, 0.3)' }}>
-          <span style={{ color: 'var(--brand-color)', fontWeight: '900', letterSpacing: '4px' }}>DKB</span>
-          <span style={{ color: '#fff', fontSize: '1.5rem', letterSpacing: '8px', fontWeight: '300' }}>FITNESS GYM</span>
-        </h1>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }}>
+          <div className="animate-fade-in" style={{ 
+            position: 'relative', 
+            width: '160px', 
+            height: '160px', 
+            marginBottom: '1rem', 
+            borderRadius: '32px',
+            backgroundColor: '#000',
+            border: '2px solid rgba(245, 166, 35, 0.4)',
+            boxShadow: '0 15px 40px rgba(245, 166, 35, 0.2)',
+            overflow: 'hidden'
+          }}>
+            <Image 
+              src="/logo.png" 
+              alt="DKB Fitness Gym Logo" 
+              fill 
+              style={{ objectFit: 'contain', transform: 'scale(0.85)' }} 
+              priority
+            />
+          </div>
+          <h2 className="animate-fade-in" style={{ fontSize: '0.9rem', color: '#666', letterSpacing: '6px', textTransform: 'uppercase', fontWeight: 600, marginTop: '0.5rem' }}>
+            DKB Fitness Gym
+          </h2>
+        </div>
 
         <div className="glass-panel" style={{ 
           padding: '4rem 2rem', 

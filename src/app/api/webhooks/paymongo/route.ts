@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     // 1. Log the sale
     await prisma.sale.create({
       data: {
-        itemName: '1 Month Membership (GCash Kiosk)',
+        itemName: 'Monthly (GCash Kiosk)',
         amount: amount || 1000,
         type: 'CUSTOMERS'
       }

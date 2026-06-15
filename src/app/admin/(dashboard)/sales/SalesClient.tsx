@@ -16,9 +16,9 @@ export default function SalesClient({ initialSales, inventory = [], members = []
   
   // Custom quick items for the POS that aren't necessarily in inventory
   const quickItems = [
-    { id: 'walkin', name: 'Walk-in Pass', price: 60, type: 'CUSTOMERS', color: 'var(--brand-color)' },
-    { id: 'member-1w', name: '1 Week Membership', price: 250, type: 'CUSTOMERS', color: 'var(--brand-color)' },
-    { id: 'member-1m', name: '1 Month Membership', price: 800, type: 'CUSTOMERS', color: 'var(--brand-color)' },
+    { id: 'walkin', name: 'Walk-in', price: 60, type: 'CUSTOMERS', color: 'var(--brand-color)' },
+    { id: 'member-1w', name: 'Weekly', price: 250, type: 'CUSTOMERS', color: 'var(--brand-color)' },
+    { id: 'member-1m', name: 'Monthly', price: 800, type: 'CUSTOMERS', color: 'var(--brand-color)' },
     { id: 'custom', name: 'Custom Amount', price: 0, type: 'CUSTOMERS', color: '#666' }
   ];
 
@@ -29,7 +29,7 @@ export default function SalesClient({ initialSales, inventory = [], members = []
       item = { ...item, price: parseFloat(amt) };
     }
 
-    if (item.name.includes('Membership')) {
+    if (item.name.includes('Weekly') || item.name.includes('Monthly') || item.name.includes('Membership')) {
       setPendingMembershipItem(item);
       setShowMemberModal(true);
       return;

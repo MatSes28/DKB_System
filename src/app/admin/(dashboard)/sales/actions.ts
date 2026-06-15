@@ -26,16 +26,16 @@ export async function addSale(data: { itemName: string; amount: number; type: st
   }
 
   // Extend membership if it's a membership purchase
-  if (data.memberId && data.itemName.includes('Membership')) {
+  if (data.memberId && (data.itemName.includes('Monthly') || data.itemName.includes('Weekly') || data.itemName.includes('Membership'))) {
     const member = await prisma.member.findUnique({ where: { id: data.memberId } });
     if (member) {
       // Determine if we are extending an active membership or restarting an expired one
       const now = new Date();
       let newEnd = new Date(member.membershipEnd) > now ? new Date(member.membershipEnd) : now;
       
-      if (data.itemName.includes('1 Month')) {
+      if (data.itemName.includes('1 Month') || data.itemName.includes('Monthly')) {
         newEnd.setMonth(newEnd.getMonth() + 1);
-      } else if (data.itemName.includes('1 Week')) {
+      } else if (data.itemName.includes('1 Week') || data.itemName.includes('Weekly')) {
         newEnd.setDate(newEnd.getDate() + 7);
       }
       

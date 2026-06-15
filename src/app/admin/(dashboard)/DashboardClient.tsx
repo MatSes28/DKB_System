@@ -23,7 +23,7 @@ export default function DashboardClient({
   if (!mounted) return <div className={styles.container}>Loading Cyber-Fitness Core...</div>;
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} animate-fade-in`}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 className={styles.pageTitle} style={{ marginBottom: '0.5rem' }}>Command Center</h1>

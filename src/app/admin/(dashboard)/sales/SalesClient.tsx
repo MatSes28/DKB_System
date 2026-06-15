@@ -16,9 +16,9 @@ export default function SalesClient({ initialSales, inventory = [], members = []
   
   // Custom quick items for the POS that aren't necessarily in inventory
   const quickItems = [
-    { id: 'walkin', name: 'Walk-in Pass', price: 150, type: 'CUSTOMERS', color: 'var(--brand-color)' },
-    { id: 'member-1m', name: '1 Month Membership', price: 1000, type: 'CUSTOMERS', color: 'var(--brand-color)' },
-    { id: 'member-1y', name: '1 Year Membership', price: 10000, type: 'CUSTOMERS', color: 'var(--brand-color)' },
+    { id: 'walkin', name: 'Walk-in Pass', price: 60, type: 'CUSTOMERS', color: 'var(--brand-color)' },
+    { id: 'member-1w', name: '1 Week Membership', price: 250, type: 'CUSTOMERS', color: 'var(--brand-color)' },
+    { id: 'member-1m', name: '1 Month Membership', price: 800, type: 'CUSTOMERS', color: 'var(--brand-color)' },
     { id: 'custom', name: 'Custom Amount', price: 0, type: 'CUSTOMERS', color: '#666' }
   ];
 

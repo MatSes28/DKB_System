@@ -8,27 +8,11 @@ import {
 import { Users, TrendingUp, Zap, AlertTriangle, Activity } from 'lucide-react';
 import styles from './page.module.css';
 
-// Stunning Mock Data for the visual presentation
-const monthlyGrowth = [
-  { name: 'Jan', members: 120 }, { name: 'Feb', members: 145 },
-  { name: 'Mar', members: 160 }, { name: 'Apr', members: 195 },
-  { name: 'May', members: 230 }, { name: 'Jun', members: 280 }
-];
-
-const peakHours = [
-  { time: '6AM', usage: 30 }, { time: '9AM', usage: 15 },
-  { time: '12PM', usage: 45 }, { time: '3PM', usage: 25 },
-  { time: '6PM', usage: 85 }, { time: '9PM', usage: 40 }
-];
-
-const revenueData = [
-  { name: 'Jan', rev: 45000 }, { name: 'Feb', rev: 52000 },
-  { name: 'Mar', rev: 58000 }, { name: 'Apr', rev: 71000 },
-  { name: 'May', rev: 85000 }, { name: 'Jun', rev: 110000 }
-];
+// Live Data injected from server
 
 export default function DashboardClient({ 
-  membersCount, activeMembersCount, todaysAttendance, salesTotal, expiringMembers, equipment 
+  membersCount, activeMembersCount, todaysAttendance, salesTotal, expiringMembers, equipment,
+  monthlyGrowth, revenueData, peakHours
 }: any) {
   const [mounted, setMounted] = useState(false);
 

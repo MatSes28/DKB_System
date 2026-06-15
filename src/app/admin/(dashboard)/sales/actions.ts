@@ -35,8 +35,8 @@ export async function addSale(data: { itemName: string; amount: number; type: st
       
       if (data.itemName.includes('1 Month')) {
         newEnd.setMonth(newEnd.getMonth() + 1);
-      } else if (data.itemName.includes('1 Year')) {
-        newEnd.setFullYear(newEnd.getFullYear() + 1);
+      } else if (data.itemName.includes('1 Week')) {
+        newEnd.setDate(newEnd.getDate() + 7);
       }
       
       await prisma.member.update({

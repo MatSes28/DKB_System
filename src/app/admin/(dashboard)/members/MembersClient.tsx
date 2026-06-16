@@ -12,22 +12,30 @@ export default function MembersClient({ initialMembers }: { initialMembers: any[
   const [extendData, setExtendData] = useState({ id: '', days: 30, amountPaid: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', contact: '', address: '', age: '', rfidTag: '', durationDays: 30, amountPaid: '', status: 'ACTIVE' });
+  const [formData, setFormData] = useState({ 
+    name: '', contact: '', address: '', age: '', rfidTag: '', 
+    birthday: '', emergencyContactName: '', emergencyContactNumber: '', emergencyContactRelation: '',
+    durationDays: 30, amountPaid: '', status: 'ACTIVE' 
+  });
   const [loading, setLoading] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
+    const birthdayDate = formData.birthday ? new Date(formData.birthday) : undefined;
+
     if (isEditing && editingId) {
       await updateMember(editingId, {
         ...formData,
         age: formData.age ? parseInt(formData.age) : undefined,
+        birthday: birthdayDate,
       });
     } else {
       await addMember({ 
         ...formData, 
         age: formData.age ? parseInt(formData.age) : undefined,
+        birthday: birthdayDate,
         durationDays: formData.durationDays,
         amountPaid: parseFloat(formData.amountPaid)
       });
@@ -40,7 +48,11 @@ export default function MembersClient({ initialMembers }: { initialMembers: any[
   };
 
   const resetForm = () => {
-    setFormData({ name: '', contact: '', address: '', age: '', rfidTag: '', durationDays: 30, amountPaid: '', status: 'ACTIVE' });
+    setFormData({ 
+      name: '', contact: '', address: '', age: '', rfidTag: '', 
+      birthday: '', emergencyContactName: '', emergencyContactNumber: '', emergencyContactRelation: '',
+      durationDays: 30, amountPaid: '', status: 'ACTIVE' 
+    });
     setIsEditing(false);
     setEditingId(null);
   };
@@ -56,6 +68,10 @@ export default function MembersClient({ initialMembers }: { initialMembers: any[
       contact: member.contact || '',
       address: member.address || '',
       age: member.age ? member.age.toString() : '',
+      birthday: member.birthday ? new Date(member.birthday).toISOString().split('T')[0] : '',
+      emergencyContactName: member.emergencyContactName || '',
+      emergencyContactNumber: member.emergencyContactNumber || '',
+      emergencyContactRelation: member.emergencyContactRelation || '',
       rfidTag: member.rfidTag,
       durationDays: 30,
       amountPaid: '',
@@ -146,7 +162,9 @@ export default function MembersClient({ initialMembers }: { initialMembers: any[
                       </div>
                       <div>
                         <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '1rem' }}>{member.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '2px' }}>Age: {member.age || 'N/A'}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '2px' }}>
+                          Age: {member.age || 'N/A'} {member.birthday && `| DOB: ${new Date(member.birthday).toLocaleDateString()}`}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -159,6 +177,13 @@ export default function MembersClient({ initialMembers }: { initialMembers: any[
                       <MapPin size={14} color="#888" />
                       <span style={{ fontSize: '0.8rem', color: '#888' }}>{member.address || 'No Address'}</span>
                     </div>
+                    {(member.emergencyContactName || member.emergencyContactNumber) && (
+                      <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '4px', borderLeft: '2px solid var(--error)' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--error)', fontWeight: 'bold', marginBottom: '2px' }}>Emergency Contact:</div>
+                        <div style={{ fontSize: '0.8rem', color: '#ccc' }}>{member.emergencyContactName} {member.emergencyContactRelation && `(${member.emergencyContactRelation})`}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#ccc' }}>{member.emergencyContactNumber}</div>
+                      </div>
+                    )}
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px 10px', borderRadius: '6px', width: 'fit-content' }}>
@@ -231,9 +256,32 @@ export default function MembersClient({ initialMembers }: { initialMembers: any[
                 <label className="label">Address</label>
                 <input type="text" className="input-field" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label className="label">Age</label>
-                <input type="number" className="input-field" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} min="1" />
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label className="label">Age</label>
+                  <input type="number" className="input-field" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} min="1" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label className="label">Birthday</label>
+                  <input type="date" className="input-field" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} />
+                </div>
+              </div>
+              <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', borderLeft: '2px solid var(--error)' }}>
+                <h3 style={{ color: 'var(--error)', fontSize: '0.9rem', marginBottom: '1rem', marginTop: 0 }}>Emergency Contact</h3>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label className="label">Name</label>
+                  <input type="text" className="input-field" value={formData.emergencyContactName} onChange={e => setFormData({...formData, emergencyContactName: e.target.value})} />
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="label">Contact Number</label>
+                    <input type="text" className="input-field" value={formData.emergencyContactNumber} onChange={e => setFormData({...formData, emergencyContactNumber: e.target.value})} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label className="label">Relationship</label>
+                    <input type="text" className="input-field" value={formData.emergencyContactRelation} onChange={e => setFormData({...formData, emergencyContactRelation: e.target.value})} placeholder="e.g. Spouse, Parent" />
+                  </div>
+                </div>
               </div>
               <div style={{ marginBottom: '1rem' }}>
                 <label className="label">RFID Tag ID</label>

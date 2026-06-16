@@ -3,8 +3,16 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function getSales() {
+export async function getSales(startDate?: Date, endDate?: Date) {
   return await prisma.sale.findMany({
+    where: {
+      ...(startDate || endDate ? {
+        date: {
+          ...(startDate ? { gte: startDate } : {}),
+          ...(endDate ? { lte: endDate } : {})
+        }
+      } : {})
+    },
     orderBy: { date: 'desc' }
   });
 }

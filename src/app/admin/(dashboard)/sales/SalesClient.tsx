@@ -1,14 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { addSale, deleteSale } from './actions';
-import { ShoppingCart, Box, Plus, Minus, Trash2, Printer, CheckCircle2, UserCheck } from 'lucide-react';
+import { addSale, deleteSale, getSales } from './actions';
+import { ShoppingCart, Box, Plus, Minus, Trash2, Printer, CheckCircle2, UserCheck, Calendar, Filter } from 'lucide-react';
 
 export default function SalesClient({ initialSales, inventory = [], members = [] }: { initialSales: any[], inventory?: any[], members?: any[] }) {
   const [sales, setSales] = useState(initialSales);
   const [cart, setCart] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'POS' | 'HISTORY'>('POS');
+  const [historySubTab, setHistorySubTab] = useState<'CUSTOMERS' | 'PRODUCTS'>('CUSTOMERS');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isFiltering, setIsFiltering] = useState(false);
   
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [pendingMembershipItem, setPendingMembershipItem] = useState<any>(null);
@@ -160,6 +164,27 @@ export default function SalesClient({ initialSales, inventory = [], members = []
       window.location.reload();
     }
   };
+
+  const handleFilter = async () => {
+    setIsFiltering(true);
+    try {
+      const start = startDate ? new Date(startDate) : undefined;
+      let end = endDate ? new Date(endDate) : undefined;
+      if (end) {
+        // Set end time to end of day to include all sales on that day
+        end.setHours(23, 59, 59, 999);
+      }
+      const filtered = await getSales(start, end);
+      setSales(filtered);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to fetch filtered sales');
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+
+  const filteredSalesList = sales.filter(s => s.type === historySubTab);
 
   return (
     <div className="animate-fade-in">
@@ -314,7 +339,54 @@ export default function SalesClient({ initialSales, inventory = [], members = []
 
       {activeTab === 'HISTORY' && (
         <div className="glass-panel" style={{ padding: '2rem' }}>
-          <h2 style={{ color: '#fff', marginBottom: '1.5rem' }}>Recent Transactions</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h2 style={{ color: '#fff', margin: 0 }}>Recent Transactions</h2>
+            
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px' }}>
+              <Calendar size={18} color="#888" />
+              <input 
+                type="date" 
+                className="input-field" 
+                style={{ padding: '6px 10px', minWidth: '130px' }}
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+              />
+              <span style={{ color: '#888' }}>to</span>
+              <input 
+                type="date" 
+                className="input-field" 
+                style={{ padding: '6px 10px', minWidth: '130px' }}
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+              />
+              <button 
+                onClick={handleFilter}
+                disabled={isFiltering}
+                className="brand-button" 
+                style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                <Filter size={16} /> {isFiltering ? 'Filtering...' : 'Filter'}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <button 
+              onClick={() => setHistorySubTab('CUSTOMERS')} 
+              className={historySubTab === 'CUSTOMERS' ? 'brand-button' : 'brand-button-outline'}
+              style={{ flex: 1 }}
+            >
+              Customer Sales
+            </button>
+            <button 
+              onClick={() => setHistorySubTab('PRODUCTS')} 
+              className={historySubTab === 'PRODUCTS' ? 'brand-button' : 'brand-button-outline'}
+              style={{ flex: 1 }}
+            >
+              Product Sales
+            </button>
+          </div>
+
           <div className="table-container">
             <table className="data-table">
               <thead>
@@ -327,7 +399,7 @@ export default function SalesClient({ initialSales, inventory = [], members = []
                 </tr>
               </thead>
               <tbody>
-                {sales.map(sale => (
+                {filteredSalesList.map(sale => (
                   <tr key={sale.id}>
                     <td>{new Date(sale.date).toLocaleString('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' })}</td>
                     <td style={{ color: '#fff', fontWeight: 'bold' }}>{sale.itemName}</td>
@@ -342,9 +414,9 @@ export default function SalesClient({ initialSales, inventory = [], members = []
                     </td>
                   </tr>
                 ))}
-                {sales.length === 0 && (
+                {filteredSalesList.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>No sales history available.</td>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>No sales history available for this category.</td>
                   </tr>
                 )}
               </tbody>

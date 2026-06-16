@@ -9,7 +9,7 @@ export async function getMembers() {
   });
 }
 
-export async function addMember(data: { name: string; contact: string; address?: string; age?: number; rfidTag: string; durationDays: number; amountPaid: number }) {
+export async function addMember(data: { name: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; durationDays: number; amountPaid: number }) {
   const start = new Date();
   const end = new Date();
   end.setDate(end.getDate() + data.durationDays);
@@ -20,6 +20,10 @@ export async function addMember(data: { name: string; contact: string; address?:
       contact: data.contact,
       address: data.address,
       age: data.age,
+      birthday: data.birthday,
+      emergencyContactName: data.emergencyContactName,
+      emergencyContactNumber: data.emergencyContactNumber,
+      emergencyContactRelation: data.emergencyContactRelation,
       rfidTag: data.rfidTag,
       membershipStart: start,
       membershipEnd: end,
@@ -40,7 +44,7 @@ export async function addMember(data: { name: string; contact: string; address?:
   revalidatePath('/admin');
 }
 
-export async function updateMember(id: string, data: { name: string; contact: string; address?: string; age?: number; rfidTag: string; status: string }) {
+export async function updateMember(id: string, data: { name: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; status: string }) {
   await prisma.member.update({
     where: { id },
     data: {
@@ -48,6 +52,10 @@ export async function updateMember(id: string, data: { name: string; contact: st
       contact: data.contact,
       address: data.address,
       age: data.age,
+      birthday: data.birthday,
+      emergencyContactName: data.emergencyContactName,
+      emergencyContactNumber: data.emergencyContactNumber,
+      emergencyContactRelation: data.emergencyContactRelation,
       rfidTag: data.rfidTag,
       status: data.status,
     }

@@ -1,11 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { addSale, deleteSale, getSales } from './actions';
 import { ShoppingCart, Box, Plus, Minus, Trash2, Printer, CheckCircle2, UserCheck, Calendar, Filter } from 'lucide-react';
+import { useToast } from '@/components/admin/Toast';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 
-export default function SalesClient({ initialSales, inventory = [], members = [] }: { initialSales: any[], inventory?: any[], members?: any[] }) {
+export default function SalesClient({ initialSales, initialTotalPages, inventory = [], members = [] }: { initialSales: any[], initialTotalPages: number, inventory?: any[], members?: any[] }) {
   const [sales, setSales] = useState(initialSales);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [cart, setCart] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'POS' | 'HISTORY'>('POS');
@@ -17,6 +22,22 @@ export default function SalesClient({ initialSales, inventory = [], members = []
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [pendingMembershipItem, setPendingMembershipItem] = useState<any>(null);
   const [selectedMemberId, setSelectedMemberId] = useState('');
+
+  // Custom amount modal state
+  const [showCustomAmountModal, setShowCustomAmountModal] = useState(false);
+  const [customAmount, setCustomAmount] = useState('');
+
+  // Confirm delete
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
+
+  // Checkout confirm
+  const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+  const [lastCheckoutCart, setLastCheckoutCart] = useState<any[]>([]);
+  const [lastCheckoutTotal, setLastCheckoutTotal] = useState(0);
+
+  const router = useRouter();
+  const { toast } = useToast();
   
   // Custom quick items for the POS that aren't necessarily in inventory
   const quickItems = [
@@ -28,9 +49,9 @@ export default function SalesClient({ initialSales, inventory = [], members = []
 
   const addToCart = (item: any, isInventory = false) => {
     if (item.id === 'custom') {
-      const amt = prompt('Enter custom amount (₱):');
-      if (!amt || isNaN(parseFloat(amt))) return;
-      item = { ...item, price: parseFloat(amt) };
+      setShowCustomAmountModal(true);
+      setCustomAmount('');
+      return;
     }
 
     if (item.name.includes('Weekly') || item.name.includes('Monthly') || item.name.includes('Membership')) {
@@ -40,6 +61,18 @@ export default function SalesClient({ initialSales, inventory = [], members = []
     }
     
     finalizeAddToCart(item, isInventory);
+  };
+
+  const handleCustomAmountConfirm = () => {
+    const amt = parseFloat(customAmount);
+    if (isNaN(amt) || amt <= 0) {
+      toast('error', 'Please enter a valid amount');
+      return;
+    }
+    const item = { id: 'custom', name: 'Custom Amount', price: amt, type: 'CUSTOMERS', color: '#666' };
+    finalizeAddToCart(item, false);
+    setShowCustomAmountModal(false);
+    setCustomAmount('');
   };
 
   const finalizeAddToCart = (item: any, isInventory = false, memberId?: string, memberName?: string) => {
@@ -96,15 +129,18 @@ export default function SalesClient({ initialSales, inventory = [], members = []
           });
         }
       }
+
+      // Save for receipt printing
+      setLastCheckoutCart([...cart]);
+      setLastCheckoutTotal(cartTotal);
+      setShowCheckoutSuccess(true);
       
-      if (confirm('Checkout successful! Print receipt?')) {
-        printReceipt(cart, cartTotal);
-      }
-      
+      toast('success', `Checkout successful! Total: ₱${cartTotal.toFixed(2)}`);
       setCart([]);
-      window.location.reload();
+      router.refresh();
     } catch (err) {
-      alert('Checkout failed. Please try again.');
+      toast('error', 'Checkout failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -159,32 +195,47 @@ export default function SalesClient({ initialSales, inventory = [], members = []
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this sale?')) {
-      await deleteSale(id);
-      window.location.reload();
+    setConfirmTarget(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDeleteSale = async () => {
+    if (!confirmTarget) return;
+    setLoading(true);
+    try {
+      await deleteSale(confirmTarget);
+      toast('success', 'Sale record deleted');
+      setConfirmOpen(false);
+      setConfirmTarget(null);
+      router.refresh();
+    } catch (err) {
+      toast('error', 'Failed to delete sale');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleFilter = async () => {
+  const fetchSales = async (p: number, t: string) => {
     setIsFiltering(true);
     try {
       const start = startDate ? new Date(startDate) : undefined;
       let end = endDate ? new Date(endDate) : undefined;
-      if (end) {
-        // Set end time to end of day to include all sales on that day
-        end.setHours(23, 59, 59, 999);
-      }
-      const filtered = await getSales(start, end);
-      setSales(filtered);
+      if (end) end.setHours(23, 59, 59, 999);
+      
+      const res = await getSales(start, end, p, 20, t);
+      setSales(res.sales);
+      setTotalPages(res.totalPages);
+      setPage(p);
     } catch (error) {
-      console.error(error);
-      alert('Failed to fetch filtered sales');
+      toast('error', 'Failed to fetch sales');
     } finally {
       setIsFiltering(false);
     }
   };
 
-  const filteredSalesList = sales.filter(s => s.type === historySubTab);
+  const handleFilter = () => fetchSales(1, historySubTab);
+
+
 
   return (
     <div className="animate-fade-in">
@@ -311,6 +362,49 @@ export default function SalesClient({ initialSales, inventory = [], members = []
         </div>
       )}
 
+      {/* Custom Amount Modal */}
+      {showCustomAmountModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="glass-panel animate-fade-in" style={{ padding: '2rem', width: '90%', maxWidth: '350px' }}>
+            <h2 style={{ color: '#fff', marginBottom: '1.5rem' }}>Custom Amount</h2>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="label">Enter Amount (₱)</label>
+              <input
+                type="number"
+                step="0.01"
+                className="input-field"
+                value={customAmount}
+                onChange={e => setCustomAmount(e.target.value)}
+                autoFocus
+                onKeyDown={e => e.key === 'Enter' && handleCustomAmountConfirm()}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setShowCustomAmountModal(false)} className="brand-button-outline">Cancel</button>
+              <button type="button" onClick={handleCustomAmountConfirm} className="brand-button">Add to Cart</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Success Modal (Print Receipt) */}
+      {showCheckoutSuccess && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="glass-panel animate-fade-in" style={{ padding: '2rem', width: '90%', maxWidth: '400px', textAlign: 'center' }}>
+            <CheckCircle2 size={64} color="var(--success)" style={{ margin: '0 auto 1rem auto' }} />
+            <h2 style={{ color: 'var(--success)', marginBottom: '0.5rem', fontSize: '1.5rem' }}>Checkout Complete!</h2>
+            <p style={{ color: '#aaa', marginBottom: '2rem' }}>Total: ₱{lastCheckoutTotal.toFixed(2)}</p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setShowCheckoutSuccess(false)} className="brand-button-outline" style={{ flex: 1 }}>Close</button>
+              <button onClick={() => { printReceipt(lastCheckoutCart, lastCheckoutTotal); setShowCheckoutSuccess(false); }} className="brand-button" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <Printer size={18} /> Print Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Member Selection Modal */}
       {showMemberModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div className="glass-panel animate-fade-in" style={{ padding: '2rem', width: '90%', maxWidth: '400px' }}>
@@ -336,6 +430,18 @@ export default function SalesClient({ initialSales, inventory = [], members = []
           </div>
         </div>
       )}
+
+      {/* Delete Confirm */}
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete Sale"
+        message="Are you sure you want to delete this sale record? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={confirmDeleteSale}
+        onCancel={() => { setConfirmOpen(false); setConfirmTarget(null); }}
+        loading={loading}
+      />
 
       {activeTab === 'HISTORY' && (
         <div className="glass-panel" style={{ padding: '2rem' }}>
@@ -372,14 +478,14 @@ export default function SalesClient({ initialSales, inventory = [], members = []
 
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
             <button 
-              onClick={() => setHistorySubTab('CUSTOMERS')} 
+              onClick={() => { setHistorySubTab('CUSTOMERS'); fetchSales(1, 'CUSTOMERS'); }} 
               className={historySubTab === 'CUSTOMERS' ? 'brand-button' : 'brand-button-outline'}
               style={{ flex: 1 }}
             >
               Customer Sales
             </button>
             <button 
-              onClick={() => setHistorySubTab('PRODUCTS')} 
+              onClick={() => { setHistorySubTab('PRODUCTS'); fetchSales(1, 'PRODUCTS'); }} 
               className={historySubTab === 'PRODUCTS' ? 'brand-button' : 'brand-button-outline'}
               style={{ flex: 1 }}
             >
@@ -399,7 +505,7 @@ export default function SalesClient({ initialSales, inventory = [], members = []
                 </tr>
               </thead>
               <tbody>
-                {filteredSalesList.map(sale => (
+                {sales.map(sale => (
                   <tr key={sale.id}>
                     <td>{new Date(sale.date).toLocaleString('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' })}</td>
                     <td style={{ color: '#fff', fontWeight: 'bold' }}>{sale.itemName}</td>
@@ -414,13 +520,35 @@ export default function SalesClient({ initialSales, inventory = [], members = []
                     </td>
                   </tr>
                 ))}
-                {filteredSalesList.length === 0 && (
+                {sales.length === 0 && (
                   <tr>
                     <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>No sales history available for this category.</td>
                   </tr>
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
+            <div style={{ color: '#888', fontSize: '0.9rem' }}>
+              Page {page} of {totalPages || 1}
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => fetchSales(page - 1, historySubTab)} 
+                disabled={page <= 1 || isFiltering}
+                className="brand-button-outline"
+              >
+                Previous
+              </button>
+              <button 
+                onClick={() => fetchSales(page + 1, historySubTab)} 
+                disabled={page >= totalPages || isFiltering}
+                className="brand-button-outline"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       )}

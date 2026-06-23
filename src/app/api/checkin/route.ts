@@ -20,6 +20,23 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
+
+    // Check if membership is active BEFORE allowing check-in
+    const isMembershipActive = now >= member.membershipStart && now <= member.membershipEnd;
+
+    if (!isMembershipActive) {
+      return NextResponse.json({
+        error: 'Membership Expired',
+        member: {
+          id: member.id,
+          name: member.name,
+          membershipEnd: member.membershipEnd,
+          status: member.status,
+          isActive: false,
+        }
+      }, { status: 403 });
+    }
+
     const startOfToday = new Date(now);
     startOfToday.setHours(0, 0, 0, 0);
 
@@ -48,8 +65,6 @@ export async function POST(req: Request) {
         },
       });
     }
-    // Check if membership is active
-    const isMembershipActive = now >= member.membershipStart && now <= member.membershipEnd;
 
     return NextResponse.json({
       success: true,
@@ -59,7 +74,7 @@ export async function POST(req: Request) {
         name: member.name,
         membershipEnd: member.membershipEnd,
         status: member.status,
-        isActive: isMembershipActive,
+        isActive: true,
       },
     });
   } catch (error) {
@@ -67,3 +82,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+

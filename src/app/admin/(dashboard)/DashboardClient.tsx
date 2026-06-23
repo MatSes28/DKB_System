@@ -2,25 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  LineChart, Line, BarChart, Bar, AreaChart, Area,
+  LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
-import { Users, TrendingUp, Zap, AlertTriangle, Activity } from 'lucide-react';
+import { Users, TrendingUp, TrendingDown, Zap, AlertTriangle, Activity, PackageX } from 'lucide-react';
 import styles from './page.module.css';
 
 // Live Data injected from server
 
 export default function DashboardClient({ 
   membersCount, activeMembersCount, todaysAttendance, salesTotal, expiringMembers, equipment,
-  monthlyGrowth, revenueData, peakHours
+  monthlyGrowth, revenueData, peakHours, lowStockItems, memberGrowthPercent, peakHourLabel, dailyAverage
 }: any) {
   const [mounted, setMounted] = useState(false);
+
+  const inactiveMembersCount = membersCount - activeMembersCount;
+  const pieData = [
+    { name: 'Active', value: activeMembersCount },
+    { name: 'Inactive', value: inactiveMembersCount > 0 ? inactiveMembersCount : 0 }
+  ];
+  const COLORS = ['var(--success)', '#333333'];
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return <div className={styles.container}>Loading Cyber-Fitness Core...</div>;
+
+  const isGrowthPositive = memberGrowthPercent >= 0;
+  const isAboveAverage = salesTotal >= dailyAverage;
 
   return (
     <div className={`${styles.container} animate-fade-in`}>
@@ -51,8 +61,9 @@ export default function DashboardClient({
               <Users size={24} color="var(--brand-color)" />
             </div>
           </div>
-          <div style={{ marginTop: '1rem', color: 'var(--success)', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <TrendingUp size={14} /> +12% this month
+          <div style={{ marginTop: '1rem', color: isGrowthPositive ? 'var(--success)' : 'var(--error)', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {isGrowthPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+            {isGrowthPositive ? '+' : ''}{memberGrowthPercent.toFixed(1)}% this month
           </div>
         </div>
         
@@ -82,7 +93,7 @@ export default function DashboardClient({
             </div>
           </div>
           <div style={{ marginTop: '1rem', color: '#888', fontSize: '0.85rem' }}>
-            Peak expected at 6:00 PM
+            Peak hour: {peakHourLabel}
           </div>
         </div>
 
@@ -96,8 +107,8 @@ export default function DashboardClient({
               <TrendingUp size={24} color="var(--success)" />
             </div>
           </div>
-          <div style={{ marginTop: '1rem', color: 'var(--success)', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            Above daily average
+          <div style={{ marginTop: '1rem', color: isAboveAverage ? 'var(--success)' : '#888', fontSize: '0.85rem', fontWeight: isAboveAverage ? 'bold' : 'normal', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {isAboveAverage ? 'Above' : 'Below'} daily avg (₱{dailyAverage.toFixed(0)})
           </div>
         </div>
       </div>
@@ -160,6 +171,35 @@ export default function DashboardClient({
                 </ResponsiveContainer>
               </div>
             </div>
+
+            <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.7s' }}>
+              <h3 className={styles.statLabel} style={{ marginBottom: '1.5rem' }}>Membership Status</h3>
+              <div style={{ width: '100%', height: '200px', display: 'flex', flexDirection: 'column' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: '#121212', border: 'none', borderRadius: '8px' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '5px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#fff' }}><div style={{ width: '10px', height: '10px', background: 'var(--success)', borderRadius: '2px' }}></div>Active ({activeMembersCount})</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#fff' }}><div style={{ width: '10px', height: '10px', background: '#333333', borderRadius: '2px' }}></div>Inactive ({inactiveMembersCount})</div>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -204,6 +244,23 @@ export default function DashboardClient({
                 </div>
               )) : (
                 <div style={{ color: '#888', fontSize: '0.85rem' }}>No equipment monitored.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="glass-panel animate-fade-in" style={{ padding: '1.5rem', animationDelay: '0.7s', borderLeft: '4px solid var(--error)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
+              <PackageX size={20} color="var(--error)" />
+              <h3 className={styles.statLabel} style={{ margin: 0 }}>Low Stock Warnings</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '250px', overflowY: 'auto' }}>
+              {lowStockItems && lowStockItems.length > 0 ? lowStockItems.map((item: any) => (
+                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(239, 68, 68, 0.05)', padding: '10px', borderRadius: '6px' }}>
+                  <span style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>{item.name}</span>
+                  <span style={{ color: 'var(--error)', fontSize: '0.85rem', fontWeight: 'bold' }}>{item.quantity} left</span>
+                </div>
+              )) : (
+                <div style={{ color: '#888', fontSize: '0.85rem', padding: '10px 0' }}>All inventory levels are good.</div>
               )}
             </div>
           </div>

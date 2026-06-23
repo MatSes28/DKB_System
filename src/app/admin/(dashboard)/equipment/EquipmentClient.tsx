@@ -1,31 +1,68 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { addEquipment, updateEquipmentStatus, deleteEquipment } from './actions';
-import { Wrench, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react';
+import { Wrench, Trash2 } from 'lucide-react';
+import { useToast } from '@/components/admin/Toast';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 
 export default function EquipmentClient({ initialData }: { initialData: any[] }) {
   const [equipment, setEquipment] = useState(initialData);
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', notes: '' });
+  const [loading, setLoading] = useState(false);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
+
+  const router = useRouter();
+  const { toast } = useToast();
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addEquipment({ name: formData.name, notes: formData.notes });
-    setShowAddModal(false);
-    setFormData({ name: '', notes: '' });
-    window.location.reload();
+    setLoading(true);
+    try {
+      await addEquipment({ name: formData.name, notes: formData.notes });
+      toast('success', `${formData.name} registered successfully`);
+      setShowAddModal(false);
+      setFormData({ name: '', notes: '' });
+      router.refresh();
+    } catch (err) {
+      toast('error', 'Failed to add equipment');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-    await updateEquipmentStatus(id, newStatus);
-    window.location.reload();
+    try {
+      await updateEquipmentStatus(id, newStatus);
+      toast('success', `Equipment status updated to ${newStatus}`);
+      router.refresh();
+    } catch (err) {
+      toast('error', 'Failed to update status');
+    }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to remove this equipment from the database?')) {
-      await deleteEquipment(id);
-      window.location.reload();
+  const handleDelete = (id: string) => {
+    setConfirmTarget(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmTarget) return;
+    setLoading(true);
+    try {
+      await deleteEquipment(confirmTarget);
+      toast('success', 'Equipment removed from database');
+      setConfirmOpen(false);
+      setConfirmTarget(null);
+      router.refresh();
+    } catch (err) {
+      toast('error', 'Failed to delete equipment');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,6 +127,18 @@ export default function EquipmentClient({ initialData }: { initialData: any[] })
         )}
       </div>
 
+      {/* Delete Confirm Modal */}
+      <ConfirmModal
+        open={confirmOpen}
+        title="Remove Equipment"
+        message="Are you sure you want to remove this equipment from the database?"
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => { setConfirmOpen(false); setConfirmTarget(null); }}
+        loading={loading}
+      />
+
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div className="glass-panel" style={{ padding: '2rem', width: '90%', maxWidth: '400px' }}>
@@ -105,7 +154,7 @@ export default function EquipmentClient({ initialData }: { initialData: any[] })
               </div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowAddModal(false)} className="brand-button-outline">Cancel</button>
-                <button type="submit" className="brand-button">Save</button>
+                <button type="submit" className="brand-button" disabled={loading}>{loading ? 'Saving...' : 'Save'}</button>
               </div>
             </form>
           </div>

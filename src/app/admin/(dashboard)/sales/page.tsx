@@ -5,8 +5,8 @@ import SalesClient from './SalesClient';
 export const dynamic = 'force-dynamic';
 
 export default async function SalesPage() {
-  const sales = await getSales();
+  const result = await getSales(undefined, undefined, 1, 20, 'CUSTOMERS');
   const inventory = await prisma.inventoryItem.findMany({ orderBy: { name: 'asc' } });
   const members = await prisma.member.findMany();
-  return <SalesClient initialSales={sales} inventory={inventory} members={members} />;
+  return <SalesClient initialSales={result.sales} initialTotalPages={result.totalPages} inventory={inventory} members={members} />;
 }

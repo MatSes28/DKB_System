@@ -3,18 +3,29 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function getSales(startDate?: Date, endDate?: Date) {
-  return await prisma.sale.findMany({
-    where: {
-      ...(startDate || endDate ? {
-        date: {
-          ...(startDate ? { gte: startDate } : {}),
-          ...(endDate ? { lte: endDate } : {})
-        }
-      } : {})
-    },
-    orderBy: { date: 'desc' }
-  });
+export async function getSales(startDate?: Date, endDate?: Date, page = 1, limit = 20, type?: string) {
+  const skip = (page - 1) * limit;
+  const whereClause = {
+    ...(type ? { type } : {}),
+    ...(startDate || endDate ? {
+      date: {
+        ...(startDate ? { gte: startDate } : {}),
+        ...(endDate ? { lte: endDate } : {})
+      }
+    } : {})
+  };
+
+  const [sales, total] = await Promise.all([
+    prisma.sale.findMany({
+      where: whereClause,
+      orderBy: { date: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.sale.count({ where: whereClause })
+  ]);
+
+  return { sales, total, totalPages: Math.ceil(total / limit) };
 }
 
 export async function addSale(data: { itemName: string; amount: number; type: string; inventoryId?: string; memberId?: string }) {

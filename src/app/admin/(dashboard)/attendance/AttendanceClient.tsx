@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { deleteAttendance } from './actions';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { Clock, CheckCircle2, UserCheck, Trash2, Calendar, Activity } from 'lucide-react';
+import { useToast } from '@/components/admin/Toast';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 
 export default function AttendanceClient({ initialData }: { initialData: any[] }) {
   const [attendances, setAttendances] = useState(initialData);
@@ -13,14 +16,35 @@ export default function AttendanceClient({ initialData }: { initialData: any[] }
   const defaultDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
   const [dateFilter, setDateFilter] = useState<string>(defaultDate);
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
+  const { toast } = useToast();
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this attendance record?')) {
-      await deleteAttendance(id);
-      window.location.reload();
+  const handleDelete = (id: string) => {
+    setConfirmTarget(id);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmTarget) return;
+    setLoading(true);
+    try {
+      await deleteAttendance(confirmTarget);
+      toast('success', 'Attendance record deleted');
+      setConfirmOpen(false);
+      setConfirmTarget(null);
+      router.refresh();
+    } catch (err) {
+      toast('error', 'Failed to delete attendance record');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -30,13 +54,29 @@ export default function AttendanceClient({ initialData }: { initialData: any[] }
     return recordDate === dateFilter;
   });
 
-  // Generate mock chart data based on filtered attendances
-  const chartData = [
-    { time: '6AM', count: 10 }, { time: '9AM', count: 25 },
-    { time: '12PM', count: 15 }, { time: '3PM', count: 30 },
-    { time: '6PM', count: filteredAttendances.length > 50 ? 50 : filteredAttendances.length }, 
-    { time: '9PM', count: 12 }
-  ];
+  // Generate real chart data based on filtered attendances by hour
+  const hourBuckets: Record<string, number> = {};
+  const keyHours = [6, 9, 12, 15, 18, 21];
+  keyHours.forEach(h => {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayHour = h > 12 ? h - 12 : h;
+    hourBuckets[`${displayHour}${ampm}`] = 0;
+  });
+  
+  filteredAttendances.forEach(a => {
+    const hour = new Date(a.timestamp).getHours();
+    // Find closest key hour
+    let closest = keyHours[0];
+    for (const kh of keyHours) {
+      if (Math.abs(hour - kh) < Math.abs(hour - closest)) closest = kh;
+    }
+    const ampm = closest >= 12 ? 'PM' : 'AM';
+    const displayHour = closest > 12 ? closest - 12 : closest;
+    const key = `${displayHour}${ampm}`;
+    if (hourBuckets[key] !== undefined) hourBuckets[key]++;
+  });
+
+  const chartData = Object.entries(hourBuckets).map(([time, count]) => ({ time, count }));
 
   if (!mounted) return null;
 
@@ -167,6 +207,18 @@ export default function AttendanceClient({ initialData }: { initialData: any[] }
           </div>
         </div>
       </div>
+
+      {/* Delete Confirm Modal */}
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete Attendance Record"
+        message="Are you sure you want to delete this attendance log entry?"
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => { setConfirmOpen(false); setConfirmTarget(null); }}
+        loading={loading}
+      />
     </div>
   );
 }

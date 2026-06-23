@@ -19,6 +19,14 @@ export default async function AdminOverview() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+  // For growth calculation: start of current month and previous month
+  const startOfThisMonth = new Date();
+  startOfThisMonth.setDate(1);
+  startOfThisMonth.setHours(0, 0, 0, 0);
+
+  const startOfLastMonth = new Date(startOfThisMonth);
+  startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
+
   // Fetch all data in parallel to eliminate waterfall delays and make it snappy!
   const [
     membersCount,
@@ -30,7 +38,11 @@ export default async function AdminOverview() {
     membersBefore6Months,
     recentMembers,
     recentSales,
-    recentAttendance
+    recentAttendance,
+    lowStockItems,
+    newMembersThisMonth,
+    newMembersLastMonth,
+    last30DaysSalesTotal
   ] = await Promise.all([
     prisma.member.count(),
     prisma.member.count({
@@ -65,10 +77,49 @@ export default async function AdminOverview() {
     prisma.attendance.findMany({
       where: { timestamp: { gte: thirtyDaysAgo } },
       select: { timestamp: true }
+    }),
+    prisma.inventoryItem.findMany({
+      where: { quantity: { lt: 5 } },
+      orderBy: { quantity: 'asc' },
+      take: 5
+    }),
+    // New members this month
+    prisma.member.count({
+      where: { createdAt: { gte: startOfThisMonth } }
+    }),
+    // New members last month
+    prisma.member.count({
+      where: { createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } }
+    }),
+    // Total sales in last 30 days for daily average
+    prisma.sale.aggregate({
+      _sum: { amount: true },
+      where: { date: { gte: thirtyDaysAgo } }
     })
   ]);
 
   const salesTotal = todaysSales._sum.amount || 0;
+
+  // --- Calculate Real Metrics ---
+
+  // Member growth percentage (this month vs last month)
+  const memberGrowthPercent = newMembersLastMonth > 0 
+    ? ((newMembersThisMonth - newMembersLastMonth) / newMembersLastMonth) * 100 
+    : newMembersThisMonth > 0 ? 100 : 0;
+
+  // Peak hour calculation from last 30 days attendance
+  const hourBuckets = Array(24).fill(0);
+  recentAttendance.forEach(a => {
+    hourBuckets[a.timestamp.getHours()]++;
+  });
+  
+  const peakHourIndex = hourBuckets.indexOf(Math.max(...hourBuckets));
+  const peakAmPm = peakHourIndex >= 12 ? 'PM' : 'AM';
+  const peakDisplayHour = peakHourIndex > 12 ? peakHourIndex - 12 : peakHourIndex === 0 ? 12 : peakHourIndex;
+  const peakHourLabel = recentAttendance.length > 0 ? `${peakDisplayHour}:00 ${peakAmPm}` : 'No data yet';
+
+  // Daily average revenue (last 30 days)
+  const dailyAverage = (last30DaysSalesTotal._sum.amount || 0) / 30;
 
   // --- Process Chart Data ---
 
@@ -84,11 +135,11 @@ export default async function AdminOverview() {
     const monthName = monthNames[d.getMonth()];
     
     // Count new members in this month
-    const newMembersThisMonth = recentMembers.filter(m => {
+    const newMembersInMonth = recentMembers.filter(m => {
       return m.createdAt.getFullYear() === d.getFullYear() && m.createdAt.getMonth() === d.getMonth();
     }).length;
     
-    currentTotal += newMembersThisMonth;
+    currentTotal += newMembersInMonth;
     monthlyGrowth.push({ name: monthName, members: currentTotal });
   }
 
@@ -106,11 +157,6 @@ export default async function AdminOverview() {
   }
 
   // 3. Peak Hours (Last 30 days)
-  const hourBuckets = Array(24).fill(0);
-  recentAttendance.forEach(a => {
-    hourBuckets[a.timestamp.getHours()]++;
-  });
-  
   const keyHours = [6, 9, 12, 15, 18, 21];
   const peakHours = keyHours.map(hour => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -132,6 +178,10 @@ export default async function AdminOverview() {
       monthlyGrowth={monthlyGrowth}
       revenueData={revenueData}
       peakHours={peakHours}
+      lowStockItems={lowStockItems}
+      memberGrowthPercent={memberGrowthPercent}
+      peakHourLabel={peakHourLabel}
+      dailyAverage={dailyAverage}
     />
   );
 }

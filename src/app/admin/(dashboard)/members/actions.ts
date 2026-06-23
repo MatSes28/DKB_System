@@ -3,13 +3,29 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function getMembers() {
-  return await prisma.member.findMany({
-    orderBy: { createdAt: 'desc' }
-  });
+export async function getMembers(page = 1, limit = 20, searchTerm = '') {
+  const skip = (page - 1) * limit;
+  const whereClause = searchTerm ? {
+    OR: [
+      { name: { contains: searchTerm, mode: 'insensitive' as const } },
+      { rfidTag: { contains: searchTerm, mode: 'insensitive' as const } }
+    ]
+  } : {};
+
+  const [members, total] = await Promise.all([
+    prisma.member.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.member.count({ where: whereClause })
+  ]);
+
+  return { members, total, totalPages: Math.ceil(total / limit) };
 }
 
-export async function addMember(data: { name: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; durationDays: number; amountPaid: number }) {
+export async function addMember(data: { name: string; email?: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; durationDays: number; amountPaid: number }) {
   const start = new Date();
   const end = new Date();
   end.setDate(end.getDate() + data.durationDays);
@@ -17,6 +33,7 @@ export async function addMember(data: { name: string; contact: string; address?:
   await prisma.member.create({
     data: {
       name: data.name,
+      email: data.email,
       contact: data.contact,
       address: data.address,
       age: data.age,
@@ -44,11 +61,12 @@ export async function addMember(data: { name: string; contact: string; address?:
   revalidatePath('/admin');
 }
 
-export async function updateMember(id: string, data: { name: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; status: string }) {
+export async function updateMember(id: string, data: { name: string; email?: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; status: string }) {
   await prisma.member.update({
     where: { id },
     data: {
       name: data.name,
+      email: data.email,
       contact: data.contact,
       address: data.address,
       age: data.age,

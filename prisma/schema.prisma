@@ -11,6 +11,7 @@ model Member {
   id               String       @id @default(uuid())
   rfidTag          String       @unique
   name             String
+  email            String?
   contact          String?
   address          String?
   age                      Int?

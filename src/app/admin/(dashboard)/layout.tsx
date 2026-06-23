@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import Sidebar from '@/components/admin/Sidebar';
+import { ToastProvider } from '@/components/admin/Toast';
 import styles from './layout.module.css';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
@@ -21,12 +22,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <main className={styles.mainContent}>
         <header className={styles.header}>
           <h2 className={styles.headerTitle}>Dashboard</h2>
-          {/* We can add a logout button here or in sidebar */}
         </header>
         <div className={styles.pageContent}>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </div>
       </main>
     </div>
   );
 }
+

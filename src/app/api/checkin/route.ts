@@ -10,16 +10,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'RFID Tag is required' }, { status: 400 });
     }
 
-    // Find the member
+    const now = new Date();
+
+    // 1. Check if the RFID belongs to a Member
     const member = await prisma.member.findUnique({
       where: { rfidTag },
     });
 
     if (!member) {
-      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
+      return NextResponse.json({ error: 'RFID Tag not found in system' }, { status: 404 });
     }
-
-    const now = new Date();
 
     // Check if membership is active BEFORE allowing check-in
     const isMembershipActive = now >= member.membershipStart && now <= member.membershipEnd;
@@ -60,15 +60,14 @@ export async function POST(req: Request) {
     } else {
       // Tap in
       await prisma.attendance.create({
-        data: {
-          memberId: member.id,
-        },
+        data: { memberId: member.id },
       });
     }
 
     return NextResponse.json({
       success: true,
       action: action,
+      isStaff: false,
       member: {
         id: member.id,
         name: member.name,

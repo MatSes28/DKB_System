@@ -88,6 +88,23 @@ model User {
   username  String   @unique
   password  String   // Hashed password
   role      String   @default("STAFF") // ADMIN, STAFF
+  
+  // HR & Payroll Fields
+  name      String?
+  contact   String?
+  rfidTag   String?  @unique
+  payType   String   @default("HOURLY") // HOURLY, MONTHLY
+  payRate   Float    @default(0) // ₱ per hour or ₱ per month
+  shifts    StaffShift[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model StaffShift {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  clockIn   DateTime @default(now())
+  clockOut  DateTime?
 }

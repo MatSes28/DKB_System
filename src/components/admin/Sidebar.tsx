@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, ShoppingCart, ClipboardList, Box, LogOut, Wrench, Menu, X, CreditCard, PieChart } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, ClipboardList, Box, LogOut, Wrench, Menu, X, CreditCard, PieChart, BadgeCheck } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const allMenuItems = [

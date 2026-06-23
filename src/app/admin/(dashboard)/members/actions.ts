@@ -25,10 +25,39 @@ export async function getMembers(page = 1, limit = 20, searchTerm = '') {
   return { members, total, totalPages: Math.ceil(total / limit) };
 }
 
-export async function addMember(data: { name: string; email?: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; durationDays: number; amountPaid: number }) {
+export async function exportAllMembers() {
+  return await prisma.member.findMany({
+    orderBy: { name: 'asc' }
+  });
+}
+
+export async function getMemberDetails(id: string) {
+  const member = await prisma.member.findUnique({ where: { id } });
+  if (!member) return { attendance: [], sales: [] };
+
+  const [attendance, sales] = await Promise.all([
+    prisma.attendance.findMany({
+      where: { memberId: id },
+      orderBy: { timestamp: 'desc' },
+      take: 50
+    }),
+    prisma.sale.findMany({
+      where: { itemName: { contains: member.name } },
+      orderBy: { date: 'desc' },
+      take: 50
+    })
+  ]);
+  
+  return { attendance, sales };
+}
+
+export async function addMember(data: { name: string; email?: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; planId: string }) {
+  const plan = await prisma.membershipPlan.findUnique({ where: { id: data.planId } });
+  if (!plan) throw new Error('Invalid plan selected');
+
   const start = new Date();
   const end = new Date();
-  end.setDate(end.getDate() + data.durationDays);
+  end.setDate(end.getDate() + plan.durationDays);
 
   await prisma.member.create({
     data: {
@@ -45,13 +74,14 @@ export async function addMember(data: { name: string; email?: string; contact: s
       membershipStart: start,
       membershipEnd: end,
       status: 'ACTIVE',
+      planId: plan.id
     }
   });
 
   await prisma.sale.create({
     data: {
-      itemName: `Membership: ${data.name} (${data.durationDays} Days)`,
-      amount: data.amountPaid,
+      itemName: `Membership: ${data.name} (${plan.name})`,
+      amount: plan.price,
       type: 'CUSTOMERS',
     }
   });
@@ -59,6 +89,7 @@ export async function addMember(data: { name: string; email?: string; contact: s
   revalidatePath('/admin/members');
   revalidatePath('/admin/sales');
   revalidatePath('/admin');
+  revalidatePath('/admin/plans');
 }
 
 export async function updateMember(id: string, data: { name: string; email?: string; contact: string; address?: string; age?: number; birthday?: Date; emergencyContactName?: string; emergencyContactNumber?: string; emergencyContactRelation?: string; rfidTag: string; status: string }) {
@@ -89,22 +120,25 @@ export async function deleteMember(id: string) {
   revalidatePath('/admin/members');
 }
 
-export async function extendMembership(id: string, additionalDays: number, amountPaid: number) {
+export async function extendMembership(id: string, planId: string) {
   const member = await prisma.member.findUnique({ where: { id } });
   if (!member) return;
 
+  const plan = await prisma.membershipPlan.findUnique({ where: { id: planId } });
+  if (!plan) throw new Error('Invalid plan selected');
+
   const currentEnd = new Date(Math.max(member.membershipEnd.getTime(), new Date().getTime()));
-  currentEnd.setDate(currentEnd.getDate() + additionalDays);
+  currentEnd.setDate(currentEnd.getDate() + plan.durationDays);
 
   await prisma.member.update({
     where: { id },
-    data: { membershipEnd: currentEnd, status: 'ACTIVE' }
+    data: { membershipEnd: currentEnd, status: 'ACTIVE', planId: plan.id }
   });
 
   await prisma.sale.create({
     data: {
-      itemName: `Renewal: ${member.name} (${additionalDays} Days)`,
-      amount: amountPaid,
+      itemName: `Renewal: ${member.name} (${plan.name})`,
+      amount: plan.price,
       type: 'CUSTOMERS',
     }
   });
@@ -112,4 +146,5 @@ export async function extendMembership(id: string, additionalDays: number, amoun
   revalidatePath('/admin/members');
   revalidatePath('/admin/sales');
   revalidatePath('/admin');
+  revalidatePath('/admin/plans');
 }

@@ -42,7 +42,8 @@ export default async function AdminOverview() {
     lowStockItems,
     newMembersThisMonth,
     newMembersLastMonth,
-    last30DaysSalesTotal
+    last30DaysSalesTotal,
+    inventoryCount
   ] = await Promise.all([
     prisma.member.count(),
     prisma.member.count({
@@ -87,7 +88,6 @@ export default async function AdminOverview() {
     prisma.member.count({
       where: { createdAt: { gte: startOfThisMonth } }
     }),
-    // New members last month
     prisma.member.count({
       where: { createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } }
     }),
@@ -95,7 +95,8 @@ export default async function AdminOverview() {
     prisma.sale.aggregate({
       _sum: { amount: true },
       where: { date: { gte: thirtyDaysAgo } }
-    })
+    }),
+    prisma.inventoryItem.count()
   ]);
 
   const salesTotal = todaysSales._sum.amount || 0;
@@ -182,6 +183,7 @@ export default async function AdminOverview() {
       memberGrowthPercent={memberGrowthPercent}
       peakHourLabel={peakHourLabel}
       dailyAverage={dailyAverage}
+      inventoryCount={inventoryCount}
     />
   );
 }

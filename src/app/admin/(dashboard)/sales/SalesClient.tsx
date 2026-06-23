@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addSale, deleteSale, getSales } from './actions';
-import { ShoppingCart, Box, Plus, Minus, Trash2, Printer, CheckCircle2, UserCheck, Calendar, Filter } from 'lucide-react';
+import { addSale, deleteSale, getSales, exportAllSales } from './actions';
+import { ShoppingCart, Box, Plus, Minus, Trash2, Printer, CheckCircle2, UserCheck, Calendar, Filter, Download } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 
@@ -235,7 +235,42 @@ export default function SalesClient({ initialSales, initialTotalPages, inventory
 
   const handleFilter = () => fetchSales(1, historySubTab);
 
+  const exportCSV = async () => {
+    try {
+      toast('success', 'Preparing CSV export...');
+      const start = startDate ? new Date(startDate) : undefined;
+      let end = endDate ? new Date(endDate) : undefined;
+      if (end) end.setHours(23, 59, 59, 999);
 
+      const allSales = await exportAllSales(start, end, historySubTab);
+      
+      const headers = ['Date', 'Item Name', 'Category', 'Amount'];
+      const csvRows = [headers.join(',')];
+      
+      allSales.forEach((s: any) => {
+        const row = [
+          `"${new Date(s.date).toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}"`,
+          `"${s.itemName}"`,
+          `"${s.type}"`,
+          s.amount.toFixed(2)
+        ];
+        csvRows.push(row.join(','));
+      });
+      
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `sales_export_${historySubTab.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+    } catch (err) {
+      toast('error', 'Failed to export sales data');
+    }
+  };
 
   return (
     <div className="animate-fade-in">
@@ -472,6 +507,13 @@ export default function SalesClient({ initialSales, initialTotalPages, inventory
                 style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
               >
                 <Filter size={16} /> {isFiltering ? 'Filtering...' : 'Filter'}
+              </button>
+              <button 
+                onClick={exportCSV}
+                className="brand-button-outline" 
+                style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', color: '#fff', borderColor: '#555' }}
+              >
+                <Download size={16} /> Export CSV
               </button>
             </div>
           </div>

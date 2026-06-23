@@ -12,7 +12,7 @@ import styles from './page.module.css';
 
 export default function DashboardClient({ 
   membersCount, activeMembersCount, todaysAttendance, salesTotal, expiringMembers, equipment,
-  monthlyGrowth, revenueData, peakHours, lowStockItems, memberGrowthPercent, peakHourLabel, dailyAverage
+  monthlyGrowth, revenueData, peakHours, lowStockItems, memberGrowthPercent, peakHourLabel, dailyAverage, inventoryCount
 }: any) {
   const [mounted, setMounted] = useState(false);
 
@@ -254,7 +254,9 @@ export default function DashboardClient({
               <h3 className={styles.statLabel} style={{ margin: 0 }}>Low Stock Warnings</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '250px', overflowY: 'auto' }}>
-              {lowStockItems && lowStockItems.length > 0 ? lowStockItems.map((item: any) => (
+              {inventoryCount === 0 ? (
+                <div style={{ color: '#888', fontSize: '0.85rem', padding: '10px 0' }}>No inventory tracked yet.</div>
+              ) : lowStockItems && lowStockItems.length > 0 ? lowStockItems.map((item: any) => (
                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(239, 68, 68, 0.05)', padding: '10px', borderRadius: '6px' }}>
                   <span style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>{item.name}</span>
                   <span style={{ color: 'var(--error)', fontSize: '0.85rem', fontWeight: 'bold' }}>{item.quantity} left</span>

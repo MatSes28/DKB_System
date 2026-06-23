@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: dkb_admin
+      POSTGRES_PASSWORD: dkb_secure_password
+      POSTGRES_DB: dkb_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dkb_admin -d dkb_system"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://dkb_admin:dkb_secure_password@db:5432/dkb_system?schema=public
+      - NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY=${NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY}
+      - PAYMONGO_SECRET_KEY=${PAYMONGO_SECRET_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    # A lightweight startup script to ensure DB migrations run before the app starts
+    command: sh -c "npx prisma db push && node server.js"
+
+  backup:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: dkb_admin
+      POSTGRES_PASSWORD: dkb_secure_password
+      POSTGRES_DB: dkb_system
+      PGHOST: db
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    # This runs a cron job to backup the database every night at 2:00 AM
+    command: >
+      sh -c '
+      echo "0 2 * * * pg_dump -U $$POSTGRES_USER -d $$POSTGRES_DB -F c -f /backups/db_backup_\$$(date +\%Y\%m\%d_\%H\%M\%S).dump" > /etc/crontabs/root &&
+      crond -f -d 8
+      '
+
+volumes:
+  pgdata:

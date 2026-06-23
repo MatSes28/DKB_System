@@ -4,16 +4,18 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, ShoppingCart, ClipboardList, Box, LogOut, Wrench, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, ClipboardList, Box, LogOut, Wrench, Menu, X, CreditCard, PieChart } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const allMenuItems = [
   { name: 'Overview', path: '/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
   { name: 'Members', path: '/admin/members', icon: Users, roles: ['ADMIN'] },
-  { name: 'Equipment', path: '/admin/equipment', icon: Wrench, roles: ['ADMIN'] },
   { name: 'Attendance', path: '/admin/attendance', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
+  { name: 'Plans', path: '/admin/plans', icon: CreditCard, roles: ['ADMIN'] },
   { name: 'Sales', path: '/admin/sales', icon: ShoppingCart, roles: ['ADMIN', 'STAFF'] },
   { name: 'Inventory', path: '/admin/inventory', icon: Box, roles: ['ADMIN', 'STAFF'] },
+  { name: 'Equipment', path: '/admin/equipment', icon: Wrench, roles: ['ADMIN'] },
+  { name: 'Reports', path: '/admin/reports', icon: PieChart, roles: ['ADMIN'] },
 ];
 
 export default function Sidebar({ role = 'ADMIN' }: { role?: string }) {

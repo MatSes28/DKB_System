@@ -28,6 +28,23 @@ export async function getSales(startDate?: Date, endDate?: Date, page = 1, limit
   return { sales, total, totalPages: Math.ceil(total / limit) };
 }
 
+export async function exportAllSales(startDate?: Date, endDate?: Date, type?: string) {
+  const whereClause = {
+    ...(type ? { type } : {}),
+    ...(startDate || endDate ? {
+      date: {
+        ...(startDate ? { gte: startDate } : {}),
+        ...(endDate ? { lte: endDate } : {})
+      }
+    } : {})
+  };
+
+  return await prisma.sale.findMany({
+    where: whereClause,
+    orderBy: { date: 'desc' }
+  });
+}
+
 export async function addSale(data: { itemName: string; amount: number; type: string; inventoryId?: string; memberId?: string }) {
   await prisma.sale.create({
     data: {

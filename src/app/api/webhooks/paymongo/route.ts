@@ -3,20 +3,30 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
-    const { memberId, amount } = await req.json();
+    const { memberId, amount, planId } = await req.json();
 
     if (!memberId) {
       return NextResponse.json({ error: 'Missing memberId' }, { status: 400 });
     }
 
-    // In a real PayMongo/GCash webhook, you would receive a payment intent ID,
-    // verify the signature, and then process the fulfillment.
+    let durationDays = 30;
+    let planName = 'Monthly (GCash)';
+    let finalAmount = amount || 1000;
+
+    if (planId) {
+      const plan = await prisma.membershipPlan.findUnique({ where: { id: planId } });
+      if (plan) {
+        durationDays = plan.durationDays;
+        planName = plan.name;
+        finalAmount = plan.price;
+      }
+    }
 
     // 1. Log the sale
     await prisma.sale.create({
       data: {
-        itemName: 'Monthly (GCash Kiosk)',
-        amount: amount || 1000,
+        itemName: `Auto-Renewal: ${planName} (GCash)`,
+        amount: finalAmount,
         type: 'CUSTOMERS'
       }
     });
@@ -26,11 +36,11 @@ export async function POST(req: Request) {
     if (member) {
       const now = new Date();
       let newEnd = new Date(member.membershipEnd) > now ? new Date(member.membershipEnd) : now;
-      newEnd.setMonth(newEnd.getMonth() + 1);
+      newEnd.setDate(newEnd.getDate() + durationDays);
 
       await prisma.member.update({
         where: { id: memberId },
-        data: { membershipEnd: newEnd, status: 'ACTIVE' }
+        data: { membershipEnd: newEnd, status: 'ACTIVE', planId: planId || member.planId }
       });
     }
 

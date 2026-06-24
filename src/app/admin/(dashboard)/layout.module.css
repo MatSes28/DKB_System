@@ -41,9 +41,21 @@
 
 @media (max-width: 768px) {
   .header {
-    padding-left: 4rem; /* Make room for the hamburger menu */
+    padding: 0 1rem;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: rgba(18, 18, 18, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
+  
+  .headerTitle {
+    font-size: 1rem;
+    color: var(--brand-color);
+  }
+
   .pageContent {
     padding: 1rem;
+    padding-bottom: 100px; /* Make room for the bottom nav */
   }
 }

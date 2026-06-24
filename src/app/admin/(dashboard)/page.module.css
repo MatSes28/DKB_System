@@ -49,7 +49,24 @@
 }
 
 @media (max-width: 768px) {
+  .pageTitle {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .mainChartsGrid {
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
   .subChartsGrid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }

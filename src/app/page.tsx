@@ -163,9 +163,10 @@ export default function KioskPage() {
       flexDirection: 'column', 
       alignItems: 'center', 
       justifyContent: 'center',
-      background: 'var(--bg-color)',
+      background: 'var(--background)',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'auto', /* allow scrolling if content exceeds height */
+      padding: '2rem 1rem'
     }}>
       {/* Background Cyber Grid */}
       <div className="cyber-grid" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3, zIndex: 0 }}></div>

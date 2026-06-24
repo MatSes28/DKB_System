@@ -33,6 +33,10 @@
   letter-spacing: 1px;
 }
 
+.mobileLogoWrapper {
+  display: none;
+}
+
 .pageContent {
   flex: 1;
   padding: 2rem;
@@ -52,6 +56,18 @@
   .headerTitle {
     font-size: 1rem;
     color: var(--brand-color);
+  }
+
+  .mobileLogoWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    background: #000;
+    border: 1px solid rgba(245, 166, 35, 0.3);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 4px 10px rgba(245, 166, 35, 0.15);
   }
 
   .pageContent {

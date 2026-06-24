@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import styles from './page.module.css';
 
 export default function AdminLogin() {
@@ -39,13 +40,34 @@ export default function AdminLogin() {
   return (
     <div className={styles.loginContainer}>
       <div className={styles.loginBox}>
-        <h1 className={styles.title} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <span className="text-brand" style={{ fontSize: '2.5rem', lineHeight: '1' }}>DKB</span>
-          <div style={{ display: 'flex', flexDirection: 'column', fontSize: '1.2rem', lineHeight: '1.1', textAlign: 'left', letterSpacing: '2px', color: '#fff' }}>
-            <span>FITNESS</span>
-            <span>GYM</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
+          <div style={{ 
+            position: 'relative', 
+            width: '80px', 
+            height: '80px', 
+            borderRadius: '20px', 
+            overflow: 'hidden', 
+            backgroundColor: '#000',
+            border: '2px solid rgba(245, 166, 35, 0.4)',
+            boxShadow: '0 10px 30px rgba(245, 166, 35, 0.2)',
+            marginBottom: '1rem'
+          }}>
+            <Image 
+              src="/logo.png" 
+              alt="DKB Logo" 
+              fill 
+              style={{ objectFit: 'contain', transform: 'scale(0.85)' }}
+              priority
+            />
           </div>
-        </h1>
+          <h1 className={styles.title} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: 0 }}>
+            <span className="text-brand" style={{ fontSize: '2.5rem', lineHeight: '1' }}>DKB</span>
+            <div style={{ display: 'flex', flexDirection: 'column', fontSize: '1.2rem', lineHeight: '1.1', textAlign: 'left', letterSpacing: '2px', color: '#fff' }}>
+              <span>FITNESS</span>
+              <span>GYM</span>
+            </div>
+          </h1>
+        </div>
         
         {error && <div className={styles.errorText}>{error}</div>}
         

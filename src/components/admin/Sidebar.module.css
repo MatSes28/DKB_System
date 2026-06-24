@@ -53,6 +53,60 @@
   flex: 1;
   padding: 2rem 1rem;
   display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #888;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.navItemIndicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--brand-color);
+  border-radius: 0 4px 4px 0;
+  transform: scaleY(0);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px var(--brand-color);
+}
+
+.navSectionLabel {
+  display: none;
+}
+
+.navItem:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  transform: translateX(4px);
+}
+
+.navItem.active {
+  background-color: rgba(245, 166, 35, 0.1);
+  color: var(--brand-color);
+}
+
+.navItem.active .navItemIndicator {
+  transform: scaleY(1);
+}
+
+.icon {
+  min-width: 20px;
+  margin-right: 16px;
   transition: margin 0.3s ease;
 }
 
